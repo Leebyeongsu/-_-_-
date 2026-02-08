@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VisionFlow | Image to Excel Converter</title>
+    <meta name="description" content="AI를 활용한 이미지 내 표 데이터 자동 엑셀 변환 도구" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div id="app">
+      <div class="title-container">
+        <h1>VisionFlow</h1>
+        <p class="subtitle">이미지를 인식하여 스마트한 엑셀 파일로 변환합니다</p>
+      </div>
+
+      <div class="main-container">
+        <!-- Left Side: Upload -->
+        <div class="glass-card">
+          <div id="drop-zone" class="upload-area">
+            <span class="upload-icon">🖼️</span>
+            <h3>이미지 업로드</h3>
+            <p>파일을 여기로 드래그하거나 클릭하여 선택하세요</p>
+            <input type="file" id="file-input" accept="image/*" class="hidden" />
+          </div>
+          <div class="preview-container">
+            <img id="image-preview" alt="Preview" />
+          </div>
+        </div>
+
+        <!-- Right Side: Results -->
+        <div class="glass-card result-area">
+          <div id="status-badge" class="status-badge status-idle">대기 중</div>
+          <h3>변환 결과</h3>
+          
+          <div id="progress-container" class="progress-container hidden">
+            <div id="progress-bar" class="progress-bar"></div>
+          </div>
+
+          <div id="results-placeholder" style="color: #64748b; margin-top: 2rem; text-align: center;">
+            <p>이미지를 업로드하면 데이터가 여기에 표시됩니다.</p>
+          </div>
+
+          <div id="header-info" class="header-info hidden">
+            <span id="header-building" class="header-tag"></span>
+            <span id="header-name" class="header-tag"></span>
+          </div>
+
+          <div id="table-container" class="hidden">
+            <div style="overflow-x: auto;">
+              <table id="data-table" class="table-preview">
+                <!-- Data will be injected here -->
+              </table>
+            </div>
+          </div>
+
+          <div class="button-group">
+            <button id="convert-btn" disabled>
+              <span id="convert-text">변환 시작</span>
+            </button>
+            <button id="download-btn" class="secondary" disabled>엑셀 다운로드</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
