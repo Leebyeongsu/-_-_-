@@ -8,15 +8,14 @@ COPY . .
 RUN npx vite build
 
 # ===== 2단계: 실행용 (경량 - Tesseract OCR) =====
-FROM python:3.11-slim
+FROM python:3.11-slim-bookworm
 
 # Node.js + Tesseract OCR 설치 (PyTorch 불필요!)
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     tesseract-ocr \
     tesseract-ocr-kor \
     tesseract-ocr-eng \
-    libgl1-mesa-glx \
     libglib2.0-0 \
     && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
