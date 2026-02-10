@@ -81,7 +81,7 @@ async function startConversion() {
   formData.append('image', selectedFile);
 
   try {
-    const response = await fetch('http://localhost:3500/api/ocr', {
+    const response = await fetch('/api/ocr', {
       method: 'POST',
       body: formData
     });
@@ -196,7 +196,7 @@ async function downloadExcel() {
 
   try {
     // 서버에 JSON 데이터 전송하여 엑셀 생성
-    const response = await fetch('http://localhost:3500/api/download-basic-excel', {
+    const response = await fetch('/api/download-basic-excel', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -268,7 +268,7 @@ async function startExcelConversion() {
   try {
     console.log('📤 엑셀 파일 업로드 중:', selectedExcelFile.name);
 
-    const response = await fetch('http://localhost:3500/api/convert-excel', {
+    const response = await fetch('/api/convert-excel', {
       method: 'POST',
       body: formData
     });

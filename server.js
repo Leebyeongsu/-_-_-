@@ -7,10 +7,15 @@ const path = require('path');
 const { spawn } = require('child_process');
 
 const app = express();
-const port = 3500;
+const port = process.env.PORT || 3500;
 
 app.use(cors());
 app.use(express.json());
+
+// 프로덕션: Vite 빌드된 정적 파일 서빙
+if (fs.existsSync(path.join(__dirname, 'dist'))) {
+    app.use(express.static(path.join(__dirname, 'dist')));
+}
 
 if (!fs.existsSync('uploads')) {
     fs.mkdirSync('uploads');
@@ -383,6 +388,13 @@ app.post('/api/convert-data-to-floor-unit', async (req, res) => {
         if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
     }
 });
+
+// 프로덕션: 모든 나머지 요청을 index.html로 라우팅
+if (fs.existsSync(path.join(__dirname, 'dist'))) {
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+    });
+}
 
 app.listen(port, () => {
     console.log(`🚀 Server at http://localhost:${port}`);
