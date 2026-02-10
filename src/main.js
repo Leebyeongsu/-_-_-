@@ -16,6 +16,16 @@ const progressBar = document.getElementById('progress-bar');
 
 let processedData = null;
 let selectedFile = null;
+let selectedExcelFile = null;
+
+// 엑셀 변환 관련 요소
+const excelDropZone = document.getElementById('excel-drop-zone');
+const excelInput = document.getElementById('excel-input');
+const excelPreview = document.getElementById('excel-preview');
+const excelFilename = document.getElementById('excel-filename');
+const excelFilesize = document.getElementById('excel-filesize');
+const excelConvertBtn = document.getElementById('excel-convert-btn');
+const excelConvertText = document.getElementById('excel-convert-text');
 
 // 색상 팔레트 (원본 현황표와 동일)
 const COLOR_MAP = {
@@ -26,10 +36,16 @@ const COLOR_MAP = {
 };
 
 function init() {
+  // 이미지 변환
   dropZone.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
   convertBtn.addEventListener('click', startConversion);
   downloadBtn.addEventListener('click', downloadExcel);
+
+  // 엑셀 변환
+  excelDropZone.addEventListener('click', () => excelInput.click());
+  excelInput.addEventListener('change', (e) => handleExcelFile(e.target.files[0]));
+  excelConvertBtn.addEventListener('click', startExcelConversion);
 }
 
 function handleFile(file) {
@@ -171,86 +187,128 @@ function renderTable(data) {
   });
 }
 
-function downloadExcel() {
+async function downloadExcel() {
   if (!processedData || processedData.length === 0) return;
 
-  const wb = XLSX.utils.book_new();
+  downloadBtn.disabled = true;
+  const originalText = downloadBtn.textContent;
+  downloadBtn.textContent = '생성 중...';
 
-  const baseStyle = {
-    border: {
-      top: { style: 'thin' },
-      bottom: { style: 'thin' },
-      left: { style: 'thin' },
-      right: { style: 'thin' }
-    },
-    alignment: { horizontal: 'center', vertical: 'center' }
-  };
-
-  // 첫 번째 행에서 호수 목록 추출
-  const firstRow = processedData[0];
-  const unitKeys = Object.keys(firstRow.units || {}).sort((a, b) => {
-    const numA = parseInt(a.replace(/[^0-9]/g, '')) || 0;
-    const numB = parseInt(b.replace(/[^0-9]/g, '')) || 0;
-    return numA - numB;
-  });
-
-  const wsData = [];
-
-  // 헤더
-  const headerRow = [
-    { v: '층', s: { ...baseStyle, font: { bold: true }, fill: { fgColor: { rgb: "DDDDDD" } } } }
-  ];
-  unitKeys.forEach(key => {
-    headerRow.push({ v: key, s: { ...baseStyle, font: { bold: true }, fill: { fgColor: { rgb: "DDDDDD" } } } });
-  });
-  wsData.push(headerRow);
-
-  // 데이터 행
-  processedData.forEach(item => {
-    const row = [
-      { v: item.floor || '', s: baseStyle }
-    ];
-
-    unitKeys.forEach(unitKey => {
-      const cellData = item.units?.[unitKey] || { text: '', color: 'WHITE' };
-      const colorKey = String(cellData.color || 'WHITE').toUpperCase();
-      const colorHex = COLOR_MAP[colorKey]?.rgb || "FFFFFF";
-
-      row.push({
-        v: cellData.text || '',
-        s: {
-          ...baseStyle,
-          fill: { fgColor: { rgb: colorHex } }
-        }
-      });
+  try {
+    // 서버에 JSON 데이터 전송하여 엑셀 생성
+    const response = await fetch('http://localhost:3500/api/download-basic-excel', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ data: processedData })
     });
 
-    wsData.push(row);
-  });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || '서버 오류');
+    }
 
-  // 워크시트 생성
-  const ws = XLSX.utils.aoa_to_sheet([]);
-  wsData.forEach((row, rIdx) => {
-    row.forEach((cell, cIdx) => {
-      const addr = XLSX.utils.encode_cell({ r: rIdx, c: cIdx });
-      ws[addr] = cell;
+    // 서버에서 생성한 엑셀 파일 다운로드
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+
+    // 파일명 생성
+    const headerEl = document.getElementById('header-name');
+    const buildingEl = document.getElementById('header-building');
+    const aptName = headerEl?.textContent || '현황표';
+    const dongName = buildingEl?.textContent || '';
+    const fileName = dongName ? `${aptName}_${dongName}` : aptName;
+    a.download = `${fileName}_${new Date().getTime()}.xlsx`;
+
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+
+    downloadBtn.textContent = '완료! ✅';
+    setTimeout(() => {
+      downloadBtn.textContent = originalText;
+      downloadBtn.disabled = false;
+    }, 2000);
+
+  } catch (error) {
+    alert(`다운로드 실패: ${error.message}`);
+    downloadBtn.textContent = originalText;
+    downloadBtn.disabled = false;
+  }
+}
+
+// 엑셀 파일 처리
+function handleExcelFile(file) {
+  if (!file) return;
+  selectedExcelFile = file;
+
+  // 파일 정보 표시
+  excelFilename.textContent = file.name;
+  const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+  excelFilesize.textContent = `${sizeInMB} MB`;
+
+  excelPreview.classList.remove('hidden');
+  excelConvertBtn.disabled = false;
+}
+
+// 엑셀 변환 시작
+async function startExcelConversion() {
+  if (!selectedExcelFile) return;
+
+  excelConvertBtn.disabled = true;
+  excelConvertText.innerHTML = '<span class="loader"></span>변환 중...';
+
+  const formData = new FormData();
+  formData.append('excel', selectedExcelFile);
+
+  try {
+    console.log('📤 엑셀 파일 업로드 중:', selectedExcelFile.name);
+
+    const response = await fetch('http://localhost:3500/api/convert-excel', {
+      method: 'POST',
+      body: formData
     });
-  });
 
-  ws['!ref'] = XLSX.utils.encode_range({
-    s: { r: 0, c: 0 },
-    e: { r: wsData.length - 1, c: unitKeys.length }
-  });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || '서버 오류');
+    }
 
-  XLSX.utils.book_append_sheet(wb, ws, "현황분석");
+    console.log('✅ 변환 완료, 다운로드 시작');
 
-  // 파일명: 헤더 정보가 있으면 활용, 없으면 기본값
-  const headerEl = document.getElementById('header-name');
-  const buildingEl = document.getElementById('header-building');
-  const aptName = headerEl?.textContent || '현황표';
-  const dongName = buildingEl?.textContent || '';
-  const fileName = dongName ? `${aptName}_${dongName}` : aptName;
-  XLSX.writeFile(wb, `${fileName}_${new Date().getTime()}.xlsx`);
+    // 변환된 엑셀 파일 다운로드
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+
+    // 파일명 생성 (원본명_변환.xlsx)
+    const originalName = selectedExcelFile.name.replace(/\.(xlsx|xls)$/i, '');
+    a.download = `${originalName}_변환.xlsx`;
+
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+
+    console.log('✅ 다운로드 완료');
+
+    excelConvertText.textContent = '변환 완료! ✅';
+    setTimeout(() => {
+      excelConvertText.textContent = '층호수 형태로 변환';
+      excelConvertBtn.disabled = false;
+    }, 2000);
+
+  } catch (error) {
+    console.error('❌ 변환 실패:', error);
+    alert(`변환 실패: ${error.message}\n\n명령줄 방식을 사용하세요:\npython excel_converter.py "파일명.xlsx"`);
+    excelConvertText.textContent = '층호수 형태로 변환';
+    excelConvertBtn.disabled = false;
+  }
 }
 
 init();

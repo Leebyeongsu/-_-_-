@@ -40,3 +40,9 @@ test_*.py
 # Cache
 __pycache__/
 *.pyc
+
+# Claude Code
+.claude/
+
+# Generated Excel files
+*.xlsx

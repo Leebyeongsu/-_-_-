@@ -318,75 +318,75 @@ def detect_symbols(cell_img):
     
     for contour in contours:
         area = cv2.contourArea(contour)
-        if area < 15:  # 너무 작은 노이즈 제외
+        if area < 20:  # 너무 작은 노이즈 제외
             continue
-        
+
         # 원형도 계산
         perimeter = cv2.arcLength(contour, True)
         if perimeter == 0:
             continue
         circularity = 4 * np.pi * area / (perimeter * perimeter)
-        
+
         # 중심점 계산
         M = cv2.moments(contour)
         if M["m00"] == 0:
             continue
         cx = int(M["m10"] / M["m00"])
         cy = int(M["m01"] / M["m00"])
-        
-        # 1. ◎ (이중 원/큰 원) - 큰 원형 기호
-        if circularity > 0.65 and area > 80:
-            # 내부가 비어있는지 확인 (이중 원)
-            mask = np.zeros(gray.shape, dtype=np.uint8)
-            cv2.drawContours(mask, [contour], -1, 255, -1)
-            inner_area = cv2.countNonZero(mask)
-            fill_ratio = inner_area / area if area > 0 else 0
-            
-            # 큰 원형이고 내부가 비어있거나 채워져 있으면 ◎
-            if area > 100:
+
+        # 바운딩 박스
+        x, y, w_rect, h_rect = cv2.boundingRect(contour)
+
+        # 원형 기호 (◎, ○, ●) 감지
+        if circularity > 0.7 and area > 30:
+            # ROI에서 원본 gray 이미지의 평균 밝기 계산
+            roi = gray[max(0, y):min(h, y+h_rect), max(0, x):min(w, x+w_rect)]
+            if roi.size == 0:
+                continue
+            avg_brightness = np.mean(roi)
+
+            # 이중원 ◎ 감지: 중심부와 외곽의 밝기 차이 확인
+            is_double_circle = False
+            if area > 100:  # 큰 원만 이중원 후보
+                # 중심부 영역 (반지름의 40%)
+                center_r = int(min(w_rect, h_rect) * 0.2)
+                if center_r > 2:
+                    center_roi = gray[max(0, cy-center_r):min(h, cy+center_r),
+                                     max(0, cx-center_r):min(w, cx+center_r)]
+                    if center_roi.size > 0:
+                        center_brightness = np.mean(center_roi)
+                        # 중심부가 외곽보다 훨씬 어두우면 이중원
+                        if center_brightness < avg_brightness * 0.6 and center_brightness < 120:
+                            is_double_circle = True
+
+            if is_double_circle:
                 detected_symbols.append(('◎', cx, area))
-        
-        # 2. ● (검은 원/큰 점) - 작은 검은 원
-        elif circularity > 0.7 and 30 < area < 150:
-            # 검은색인지 확인
-            x, y, w_rect, h_rect = cv2.boundingRect(contour)
-            roi = gray[max(0, y):min(h, y+h_rect), max(0, x):min(w, x+w_rect)]
-            if roi.size > 0:
-                avg_brightness = np.mean(roi)
-                if avg_brightness < 100:  # 어두운 원
+            elif avg_brightness < 80:  # 매우 어두운 원 → ●
+                detected_symbols.append(('●', cx, area))
+            elif avg_brightness > 150:  # 밝은 원 → ○
+                detected_symbols.append(('○', cx, area))
+            else:
+                # 중간 밝기: 크기로 구분
+                if area > 100:
+                    detected_symbols.append(('◎', cx, area))
+                elif avg_brightness < 130:
                     detected_symbols.append(('●', cx, area))
-        
-        # 3. ○ (흰 원) - 작은 흰 원
-        elif circularity > 0.7 and 20 < area < 150:
-            # 흰색인지 확인
-            x, y, w_rect, h_rect = cv2.boundingRect(contour)
-            roi = gray[max(0, y):min(h, y+h_rect), max(0, x):min(w, x+w_rect)]
-            if roi.size > 0:
-                avg_brightness = np.mean(roi)
-                # 내부가 비어있는 원형
-                mask = np.zeros(gray.shape, dtype=np.uint8)
-                cv2.drawContours(mask, [contour], -1, 255, 2)  # 윤곽선만
-                if avg_brightness > 150:  # 밝은 원
+                else:
                     detected_symbols.append(('○', cx, area))
-        
-        # 4. □ (큰 사각형) 감지
+
+        # 사각형 □ 감지
         elif area > 40:
             # 사각형 근사
             peri = cv2.arcLength(contour, True)
             approx = cv2.approxPolyDP(contour, 0.04 * peri, True)
-            
+
             # 4개 꼭짓점이면 사각형
             if len(approx) == 4:
-                x, y, w_rect, h_rect = cv2.boundingRect(contour)
                 aspect_ratio = float(w_rect) / h_rect if h_rect > 0 else 0
                 # 정사각형에 가까움
                 if 0.6 < aspect_ratio < 1.4 and area > 50:
                     detected_symbols.append(('□', cx, area))
     
-    # 기호 → 문자 코드 매핑
-    # ● 미동의인터넷 → I, ○ Mega인터넷 → O, ◎ GiGA인터넷(색상으로 표시) → 빈값, □ 인터넷보유 → I
-    SYMBOL_MAP = {'◎': '', '○': 'O', '●': 'I', '□': 'I'}
-
     # 중복 제거 (같은 위치의 기호는 면적이 큰 것만 선택)
     if detected_symbols:
         # x 좌표로 정렬
@@ -405,14 +405,14 @@ def detect_symbols(cell_img):
             if not is_duplicate:
                 filtered.append((sym, x, area))
 
-        # x 좌표로 다시 정렬 후 문자 코드로 변환 (중복 문자 제거)
+        # x 좌표로 다시 정렬 후 원본 기호 그대로 사용 (변환하지 않음)
         filtered.sort(key=lambda x: x[1])
         seen = set()
         for s in filtered:
-            letter = SYMBOL_MAP.get(s[0], '')
-            if letter and letter not in seen:
-                seen.add(letter)
-                symbols.append(letter)
+            symbol = s[0]  # 원본 기호 (◎, ○, ●, □)
+            if symbol and symbol not in seen:
+                seen.add(symbol)
+                symbols.append(symbol)
 
     return symbols
 

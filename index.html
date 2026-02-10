@@ -18,8 +18,9 @@
       </div>
 
       <div class="main-container">
-        <!-- Left Side: Upload -->
+        <!-- Left Side: Image Upload -->
         <div class="glass-card">
+          <div class="card-title">📸 이미지 → 엑셀 변환</div>
           <div id="drop-zone" class="upload-area">
             <span class="upload-icon">🖼️</span>
             <h3>이미지 업로드</h3>
@@ -31,11 +32,11 @@
           </div>
         </div>
 
-        <!-- Right Side: Results -->
+        <!-- Middle: Results -->
         <div class="glass-card result-area">
           <div id="status-badge" class="status-badge status-idle">대기 중</div>
           <h3>변환 결과</h3>
-          
+
           <div id="progress-container" class="progress-container hidden">
             <div id="progress-bar" class="progress-bar"></div>
           </div>
@@ -61,7 +62,36 @@
             <button id="convert-btn" disabled>
               <span id="convert-text">변환 시작</span>
             </button>
-            <button id="download-btn" class="secondary" disabled>엑셀 다운로드</button>
+            <button id="download-btn" class="secondary" disabled>기본 엑셀 다운로드</button>
+          </div>
+        </div>
+
+        <!-- Right Side: Excel Converter -->
+        <div class="glass-card">
+          <div class="card-title">📊 층호수 형태 변환</div>
+          <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; font-size: 0.85rem; line-height: 1.6; color: #a5b4fc;">
+            💡 <strong>왼쪽에서 다운로드한 기본 엑셀을</strong> 여기에 업로드하세요!<br>
+            층호수 형태(2501, 1402...)로 자동 변환됩니다.
+          </div>
+          <div id="excel-drop-zone" class="upload-area">
+            <span class="upload-icon">📊</span>
+            <h3>엑셀 파일 업로드</h3>
+            <p>기본 형태 엑셀을 선택하세요</p>
+            <input type="file" id="excel-input" accept=".xlsx,.xls" class="hidden" />
+          </div>
+          <div id="excel-preview" class="excel-preview hidden">
+            <div class="file-info">
+              <span class="file-icon">📄</span>
+              <div>
+                <div id="excel-filename" class="filename"></div>
+                <div id="excel-filesize" class="filesize"></div>
+              </div>
+            </div>
+          </div>
+          <div class="button-group">
+            <button id="excel-convert-btn" disabled>
+              <span id="excel-convert-text">층호수 형태로 변환</span>
+            </button>
           </div>
         </div>
       </div>
