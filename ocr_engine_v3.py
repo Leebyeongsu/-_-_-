@@ -7,15 +7,53 @@ import os
 sys.stdout.reconfigure(encoding='utf-8')
 sys.stderr.reconfigure(encoding='utf-8')
 
-# EasyOCR 초기화
+# Tesseract OCR 초기화 (EasyOCR + PyTorch 대체 → 경량화)
 try:
-    import easyocr
-    OCR_READER = easyocr.Reader(['en', 'ko'], gpu=False, verbose=False)
+    import pytesseract
+    from PIL import Image
     OCR_AVAILABLE = True
-    print("EasyOCR 로드 완료", file=sys.stderr)
+    print("Tesseract OCR 로드 완료", file=sys.stderr)
 except:
-    OCR_READER = None
     OCR_AVAILABLE = False
+    print("Tesseract OCR 로드 실패", file=sys.stderr)
+
+
+def ocr_read_text(cell_img, lang='eng+kor'):
+    """Tesseract로 텍스트 읽기 (EasyOCR 대체)"""
+    if not OCR_AVAILABLE or cell_img.size == 0:
+        return ""
+    try:
+        # OpenCV BGR → RGB 변환 후 PIL Image로
+        rgb = cv2.cvtColor(cell_img, cv2.COLOR_BGR2RGB)
+        pil_img = Image.fromarray(rgb)
+        # PSM 7: 단일 텍스트 라인, PSM 13: 단일 문자
+        text = pytesseract.image_to_string(pil_img, lang=lang,
+                                            config='--psm 7 --oem 3').strip()
+        return text
+    except:
+        return ""
+
+
+def ocr_read_text_with_positions(cell_img, lang='eng+kor'):
+    """Tesseract로 텍스트 + 위치 정보 읽기"""
+    if not OCR_AVAILABLE or cell_img.size == 0:
+        return []
+    try:
+        rgb = cv2.cvtColor(cell_img, cv2.COLOR_BGR2RGB)
+        pil_img = Image.fromarray(rgb)
+        data = pytesseract.image_to_data(pil_img, lang=lang,
+                                          config='--psm 7 --oem 3',
+                                          output_type=pytesseract.Output.DICT)
+        results = []
+        for i in range(len(data['text'])):
+            conf = int(data['conf'][i])
+            text = data['text'][i].strip()
+            if conf > 30 and text:
+                cx = data['left'][i] + data['width'][i] / 2
+                results.append((text, cx, conf))
+        return results
+    except:
+        return []
 
 
 def load_image(image_path):
@@ -169,23 +207,10 @@ def find_main_table(h_lines, v_lines, img_shape):
         data_v_end = current_start + current_count
 
     # 열이 한 칸씩 밀린 문제 해결: data_v_start를 0으로 조정
-    # data_v_start=1일 때 data_v[0] = v_lines[1]이 실제로는 2호의 왼쪽 경계
-    # data_v_start=0일 때 data_v[0] = v_lines[0]이 층 열 왼쪽, data_v[1] = v_lines[1]이 1호 왼쪽
-    # 따라서 data_v_start를 0으로 조정하거나, data_v_start를 -1로 조정
-    # 하지만 data_v_start는 인덱스이므로 음수가 될 수 없음
-    # 대신 data_v_start를 0으로 강제 설정하거나, selected_v를 한 칸 앞으로 이동
-    
-    # 해결: data_v_start를 0으로 조정 (층 열 포함)
     if data_v_start > 0:
         data_v_start = data_v_start - 1  # 한 칸 앞으로 이동
 
     # 선택된 라인들
-    # 헤더 행들 제외:
-    # - 열 헤더 행 (호/층, 1, 2, 3...)
-    # - 통계 값 행 (189, 35%, 66...)
-    # 층 열 제외:
-    # - 첫 번째 열이 층 번호 (25, 24, 23...)
-    # skip 없이 전체 선택 (process_image에서 오프셋 처리)
     selected_h = h_lines[data_h_start:data_h_end+2]
     selected_v = v_lines[data_v_start:data_v_end+2]
 
@@ -208,7 +233,7 @@ def classify_color(r, g, b):
     brightness = (r + g + b) / 3
 
     # 1. RGB 기반 분류
-    
+
     # 흰색 (모든 채널이 매우 높고 비슷함)
     if r > 245 and g > 245 and b > 245:
         return "WHITE"
@@ -298,24 +323,23 @@ def detect_symbols(cell_img):
     """셀 이미지에서 기호 감지: ◎ □ ● ○"""
     if cell_img.size == 0:
         return []
-    
+
     symbols = []
     gray = cv2.cvtColor(cell_img, cv2.COLOR_BGR2GRAY)
     h, w = gray.shape
-    
+
     if h < 10 or w < 10:  # 너무 작은 셀
         return []
-    
+
     # 적응형 이진화로 더 정확한 윤곽선 추출
-    # THRESH_BINARY_INV: 어두운 기호(●○◎□)가 흰색으로 반전되어 윤곽선 감지 가능
     binary = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                     cv2.THRESH_BINARY_INV, 11, 2)
-    
+
     # 윤곽선 찾기
     contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    
+
     detected_symbols = []  # (기호, x좌표, 면적) 튜플 리스트
-    
+
     for contour in contours:
         area = cv2.contourArea(contour)
         if area < 20:  # 너무 작은 노이즈 제외
@@ -386,7 +410,7 @@ def detect_symbols(cell_img):
                 # 정사각형에 가까움
                 if 0.6 < aspect_ratio < 1.4 and area > 50:
                     detected_symbols.append(('□', cx, area))
-    
+
     # 중복 제거 (같은 위치의 기호는 면적이 큰 것만 선택)
     if detected_symbols:
         # x 좌표로 정렬
@@ -405,11 +429,11 @@ def detect_symbols(cell_img):
             if not is_duplicate:
                 filtered.append((sym, x, area))
 
-        # x 좌표로 다시 정렬 후 원본 기호 그대로 사용 (변환하지 않음)
+        # x 좌표로 다시 정렬 후 원본 기호 그대로 사용
         filtered.sort(key=lambda x: x[1])
         seen = set()
         for s in filtered:
-            symbol = s[0]  # 원본 기호 (◎, ○, ●, □)
+            symbol = s[0]
             if symbol and symbol not in seen:
                 seen.add(symbol)
                 symbols.append(symbol)
@@ -426,45 +450,35 @@ def extract_text(img, x1, y1, x2, y2):
         return ""
 
     result_parts = []
-    
+
     # 1. 기호 감지 (◎ □ ● ○)
     symbols = detect_symbols(cell)
     result_parts.extend(symbols)
-    
-    # 2. OCR로 문자 인식 (M, V, P 등)
+
+    # 2. Tesseract OCR로 문자 인식 (M, V, P 등)
     if OCR_AVAILABLE:
         try:
-            # detail=1로 설정하여 위치 정보도 가져오기
-            ocr_results = OCR_READER.readtext(cell, detail=1, paragraph=False)
+            ocr_results = ocr_read_text_with_positions(cell, lang='eng')
             if ocr_results:
-                # OCR 결과를 x 좌표로 정렬
                 ocr_chars = []
-                for (bbox, text, confidence) in ocr_results:
-                    if confidence > 0.3:  # 신뢰도가 낮은 결과 제외
-                        # bbox의 중심 x 좌표 계산
-                        x_coords = [point[0] for point in bbox]
-                        cx = sum(x_coords) / len(x_coords)
-                        # 텍스트에서 유효한 문자만 추출
-                        for char in text.upper():
-                            if char.isalpha() and char in ['M', 'V', 'P', 'I', 'O']:
-                                ocr_chars.append((char, cx))
-                
-                # x 좌표로 정렬
+                for (text, cx, conf) in ocr_results:
+                    for char in text.upper():
+                        if char.isalpha() and char in ['M', 'V', 'P', 'I', 'O']:
+                            ocr_chars.append((char, cx))
+
                 ocr_chars.sort(key=lambda x: x[1])
                 result_parts.extend([char for char, _ in ocr_chars])
-        except Exception as e:
-            # detail=1이 실패하면 detail=0으로 재시도
+        except:
             try:
-                ocr_results = OCR_READER.readtext(cell, detail=0, paragraph=False)
-                if ocr_results:
-                    ocr_text = ''.join(ocr_results).strip().upper()
-                    for char in ocr_text:
+                ocr_text = ocr_read_text(cell, lang='eng')
+                if ocr_text:
+                    for char in ocr_text.upper():
                         if char.isalpha() and char in ['M', 'V', 'P', 'I', 'O']:
                             result_parts.append(char)
             except:
                 pass
-    
-    # 결과 합치기 (공백 없이, 왼쪽부터 순서대로, 중복 문자 제거)
+
+    # 결과 합치기 (중복 문자 제거)
     seen = set()
     deduped = []
     for char in result_parts:
@@ -492,30 +506,35 @@ def extract_header_info(img, table_top_y):
         return header_info
 
     try:
-        results = OCR_READER.readtext(header_region, detail=1, paragraph=False)
-        print(f"헤더 OCR 결과: {len(results)}개", file=sys.stderr)
+        rgb = cv2.cvtColor(header_region, cv2.COLOR_BGR2RGB)
+        pil_img = Image.fromarray(rgb)
+        data = pytesseract.image_to_data(pil_img, lang='eng+kor',
+                                          config='--psm 6 --oem 3',
+                                          output_type=pytesseract.Output.DICT)
 
         texts = []
-        for (bbox, text, conf) in results:
-            if conf > 0.3:
-                # bbox 중심 x 좌표
-                cx = sum(p[0] for p in bbox) / len(bbox)
-                texts.append((cx, text.strip()))
-                print(f"  헤더 텍스트: '{text.strip()}' (신뢰도: {conf:.2f}, x={cx:.0f})", file=sys.stderr)
+        for i in range(len(data['text'])):
+            conf = int(data['conf'][i])
+            text = data['text'][i].strip()
+            if conf > 30 and text:
+                cx = data['left'][i] + data['width'][i] / 2
+                texts.append((cx, text))
+                print(f"  헤더 텍스트: '{text}' (신뢰도: {conf}, x={cx:.0f})", file=sys.stderr)
+
+        print(f"헤더 OCR 결과: {len(texts)}개", file=sys.stderr)
 
         # 텍스트에서 정보 추출
+        import re
         for _, text in texts:
-            # 동 번호 찾기: 숫자 + "동" 또는 "동선택" 다음 숫자
-            import re
+            # 동 번호 찾기
             dong_match = re.search(r'(\d{2,4})\s*동?', text)
             if dong_match and not header_info["building"]:
                 num = dong_match.group(1)
                 if 100 <= int(num) <= 9999:
                     header_info["building"] = f"{num}동"
 
-            # 아파트 이름 찾기: 한글 2글자 이상 + 숫자(차) 패턴
+            # 아파트 이름 찾기
             if len(text) >= 4 and any(c >= '가' and c <= '힣' for c in text):
-                # "동선택", "세대수" 등 메타 텍스트 제외
                 skip_words = ['동선택', '세대수', '호', '층']
                 if not any(sw in text for sw in skip_words):
                     if not header_info["name"]:
@@ -551,13 +570,6 @@ def process_image(image_path):
     # ======================================================
     # 헤더/데이터 판별: 첫 행의 첫 열(층 번호 열)을 OCR
     # ======================================================
-    # 핵심 로직:
-    #   - OCR 결과가 숫자(예: "25") → 첫 행은 데이터 행 (25층)
-    #     → 행을 건너뛰지 않고, actual_rows = 해당 숫자로 제한
-    #     → 아래쪽 여분 행은 자연스럽게 무시됨
-    #   - OCR 결과가 비숫자(예: "호", "층") → 첫 행은 헤더
-    #     → 첫 행을 건너뜀
-    # ======================================================
     rows_to_skip = 0
     detected_max_floor = None
 
@@ -573,17 +585,13 @@ def process_image(image_path):
 
             if OCR_AVAILABLE:
                 try:
-                    result = OCR_READER.readtext(floor_cell, detail=0, paragraph=False)
-                    text = ''.join(result).strip().replace(' ', '')
+                    text = ocr_read_text(floor_cell, lang='eng').replace(' ', '')
                     print(f"첫 행 첫 열 OCR: '{text}'", file=sys.stderr)
 
                     if text.isdigit():
                         detected_max_floor = int(text)
-                        # 숫자 → 첫 행은 데이터 (층 번호)
-                        # 건너뛰지 않음! actual_rows로 제한하여 여분 행 무시
                         print(f"첫 행 = {detected_max_floor}층 데이터 (건너뛰지 않음)", file=sys.stderr)
                     else:
-                        # 비숫자 → 헤더 행 (호/층 등)
                         rows_to_skip = 1
                         print(f"첫 행 = 헤더 ('{text}'), 건너뜀", file=sys.stderr)
 
@@ -592,8 +600,7 @@ def process_image(image_path):
                             y1b, y2b = data_h[1], data_h[2]
                             cell2 = img[y1b+margin:y2b-margin, x1+margin:x2-margin]
                             if cell2.size > 0:
-                                result2 = OCR_READER.readtext(cell2, detail=0, paragraph=False)
-                                text2 = ''.join(result2).strip().replace(' ', '')
+                                text2 = ocr_read_text(cell2, lang='eng').replace(' ', '')
                                 if text2.isdigit():
                                     detected_max_floor = int(text2)
                                     print(f"두 번째 행 = {detected_max_floor}층", file=sys.stderr)
@@ -649,7 +656,7 @@ def process_image(image_path):
         }
 
         for col in range(actual_cols):
-            unit_num = col + 1  # 1호~10호 (원본 엔진 방식)
+            unit_num = col + 1  # 1호~10호
 
             # 행 경계
             if row < len(data_h) - 1:
@@ -657,7 +664,7 @@ def process_image(image_path):
             else:
                 continue
 
-            # 열 경계 (원본 엔진 방식: data_v_lines[col]이 col+1호의 왼쪽 경계)
+            # 열 경계
             if col < len(data_v_lines) - 1:
                 x1, x2 = data_v_lines[col], data_v_lines[col + 1]
             else:
