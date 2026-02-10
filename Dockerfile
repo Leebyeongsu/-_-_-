@@ -1,45 +1,48 @@
-# Node.js + Python 경량 이미지
-FROM node:20-slim
+# ===== 1단계: 빌드용 =====
+FROM node:20-slim AS builder
 
-# Python 설치
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npx vite build
+
+# ===== 2단계: 실행용 (경량) =====
+FROM python:3.11-slim
+
+# Node.js 설치 (경량)
 RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
+    curl \
     libgl1-mesa-glx \
     libglib2.0-0 \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
-
-# python3를 python으로 심볼릭 링크
-RUN ln -sf /usr/bin/python3 /usr/bin/python
 
 WORKDIR /app
 
-# Node.js 의존성 설치
+# PyTorch CPU 전용 (가장 큰 패키지 → 먼저 설치하여 캐시)
+RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu
+
+# Python 의존성 (최소한만)
+RUN pip install --no-cache-dir easyocr opencv-python-headless numpy Pillow openpyxl
+
+# Node.js 의존성 (프로덕션만)
 COPY package*.json ./
 RUN npm install --omit=dev
 
-# PyTorch CPU 전용 버전 설치 (2GB → 200MB로 경량화)
-RUN pip3 install --no-cache-dir --break-system-packages \
-    torch --index-url https://download.pytorch.org/whl/cpu
-
-# Python 의존성 설치 (torch는 이미 설치됨)
-COPY requirements.txt ./
-RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
-
-# 불필요한 캐시 정리
-RUN rm -rf /root/.cache /tmp/*
+# 빌드된 프론트엔드 복사
+COPY --from=builder /app/dist ./dist
 
 # 소스 코드 복사
-COPY . .
+COPY server.js ./
+COPY ocr_engine_v3.py ./
+COPY excel_converter.py ./
+COPY basic_excel_generator.py ./
+COPY json_to_floor_unit.py ./
+COPY .env* ./
 
-# Vite 빌드 (프론트엔드 정적 파일 생성)
-RUN npx vite build
-
-# uploads 폴더 생성
 RUN mkdir -p uploads
 
-# 포트 노출
 EXPOSE ${PORT:-3500}
-
-# 서버 실행
 CMD ["node", "server.js"]
