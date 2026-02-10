@@ -48,5 +48,5 @@ COPY .env* ./
 
 RUN mkdir -p uploads
 
-EXPOSE ${PORT:-3500}
+EXPOSE 3500
 CMD ["node", "server.js"]

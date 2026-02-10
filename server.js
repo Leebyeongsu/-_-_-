@@ -400,7 +400,7 @@ if (fs.existsSync(path.join(__dirname, 'dist'))) {
     });
 }
 
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
     console.log(`🚀 Server at http://localhost:${port}`);
     console.log(`📦 OCR Engine: v3 (자동 그리드 + EasyOCR)`);
     console.log(`📦 Excel Converter: openpyxl 기반 변환`);
