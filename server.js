@@ -389,10 +389,14 @@ app.post('/api/convert-data-to-floor-unit', async (req, res) => {
     }
 });
 
-// 프로덕션: 모든 나머지 요청을 index.html로 라우팅
+// 프로덕션: SPA 폴백 (알 수 없는 GET 요청 → index.html)
 if (fs.existsSync(path.join(__dirname, 'dist'))) {
-    app.get('/{*path}', (req, res) => {
-        res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+    app.use((req, res, next) => {
+        if (req.method === 'GET' && !req.path.startsWith('/api/')) {
+            res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+        } else {
+            next();
+        }
     });
 }
 
