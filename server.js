@@ -391,7 +391,7 @@ app.post('/api/convert-data-to-floor-unit', async (req, res) => {
 
 // 프로덕션: 모든 나머지 요청을 index.html로 라우팅
 if (fs.existsSync(path.join(__dirname, 'dist'))) {
-    app.get('*', (req, res) => {
+    app.get('/{*path}', (req, res) => {
         res.sendFile(path.join(__dirname, 'dist', 'index.html'));
     });
 }
