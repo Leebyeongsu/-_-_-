@@ -62,22 +62,68 @@ p.subtitle {
 
 .main-container {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 2rem;
+  grid-template-columns: 1fr auto 1fr auto 1fr;
+  gap: 1rem 0.5rem;
   margin-top: 2rem;
+  align-items: center;
+}
+
+.flow-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  padding: 0;
+  position: relative;
+  width: 32px;
+}
+
+.flow-arrow::before {
+  content: '';
+  display: block;
+  width: 18px;
+  height: 8px;
+  background: linear-gradient(to right, #6366f1, #c084fc);
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.8);
+  animation: arrow-pulse 2s ease-in-out infinite;
+}
+
+.flow-arrow::after {
+  content: '';
+  display: block;
+  width: 0;
+  height: 0;
+  border-top: 16px solid transparent;
+  border-bottom: 16px solid transparent;
+  border-left: 20px solid #c084fc;
+  filter: drop-shadow(0 0 6px rgba(192, 132, 252, 0.9));
+  animation: arrow-pulse 2s ease-in-out infinite;
+}
+
+@keyframes arrow-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
 }
 
 @media (max-width: 1200px) {
   .main-container {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr auto 1fr;
   }
+  /* 2행에서 3번째 카드(Card3)가 다음 줄로 내려가므로 화살표 숨김 */
+  .flow-arrow:nth-child(4) { display: none; }
+  .flow-arrow:nth-child(8) { display: none; }
 }
 
 @media (max-width: 900px) {
   .main-container {
     grid-template-columns: 1fr;
   }
+  .flow-arrow {
+    display: none;
+  }
 }
+
 
 .glass-card {
   background: var(--glass-bg);

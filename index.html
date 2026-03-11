@@ -18,7 +18,8 @@
       </div>
 
       <div class="main-container">
-        <!-- Left Side: Image Upload -->
+
+        <!-- Card 1: Image Upload -->
         <div class="glass-card">
           <div class="card-title">📸 이미지 → 엑셀 변환</div>
           <div id="drop-zone" class="upload-area">
@@ -32,7 +33,10 @@
           </div>
         </div>
 
-        <!-- Middle: Results -->
+        <!-- Arrow 1→2 -->
+        <div class="flow-arrow"></div>
+
+        <!-- Card 2: Results -->
         <div class="glass-card result-area">
           <div id="status-badge" class="status-badge status-idle">대기 중</div>
           <h3>변환 결과</h3>
@@ -66,7 +70,10 @@
           </div>
         </div>
 
-        <!-- Right Side: Excel Converter -->
+        <!-- Arrow 2→3 -->
+        <div class="flow-arrow"></div>
+
+        <!-- Card 3: 층호수 형태 변환 -->
         <div class="glass-card">
           <div class="card-title">📊 층호수 형태 변환</div>
           <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; font-size: 0.85rem; line-height: 1.6; color: #a5b4fc;">
@@ -94,6 +101,48 @@
             </button>
           </div>
         </div>
+
+        <!-- Card 4: 동부산지사 맵자료 수정 (업로드만) -->
+        <div class="glass-card">
+          <div class="card-title">🗺️ 동부산지사 아파트 맵자료 =&gt; 수정 및 변환</div>
+          <div id="map-drop-zone" class="upload-area">
+            <span class="upload-icon">📂</span>
+            <h3>엑셀 원본 파일 업로드</h3>
+            <p>파일을 여기로 드래그하거나 클릭하여 선택하세요</p>
+            <input type="file" id="map-input" accept=".xlsx,.xls" class="hidden" />
+          </div>
+          <div id="map-preview" class="excel-preview hidden">
+            <div class="file-info">
+              <span class="file-icon">📄</span>
+              <div>
+                <div id="map-filename" class="filename"></div>
+                <div id="map-filesize" class="filesize"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Arrow 4→5 -->
+        <div class="flow-arrow"></div>
+
+        <!-- Card 5: 수정 및 변환 버튼 -->
+        <div class="glass-card">
+          <div class="card-title">🗺️ 동부산지사 맵자료 변환 실행</div>
+          <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 1.5rem;">
+            왼쪽 카드에서 엑셀 원본 파일을 업로드한 후<br>아래 버튼을 클릭하세요.
+          </p>
+          <div class="button-group">
+            <button id="map-convert-btn" disabled>
+              <span id="map-convert-text">수정 및 변환</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Card 6: 빈 카드 자리 (화살표 없음) -->
+        <div class="flow-arrow"></div>
+
+        <!-- Card 6: 빈 카드 -->
+        <div class="glass-card"></div>
       </div>
     </div>
     <script type="module" src="/src/main.js"></script>

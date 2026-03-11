@@ -18,6 +18,15 @@ let processedData = null;
 let selectedFile = null;
 let selectedExcelFile = null;
 
+// 맵자료 수정 관련 요소
+const mapDropZone = document.getElementById('map-drop-zone');
+const mapInput = document.getElementById('map-input');
+const mapPreview = document.getElementById('map-preview');
+const mapFilename = document.getElementById('map-filename');
+const mapFilesize = document.getElementById('map-filesize');
+const mapConvertBtn = document.getElementById('map-convert-btn');
+const mapConvertText = document.getElementById('map-convert-text');
+
 // 엑셀 변환 관련 요소
 const excelDropZone = document.getElementById('excel-drop-zone');
 const excelInput = document.getElementById('excel-input');
@@ -41,6 +50,19 @@ function init() {
   fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
   convertBtn.addEventListener('click', startConversion);
   downloadBtn.addEventListener('click', downloadExcel);
+
+  // 맵자료 수정
+  mapDropZone.addEventListener('click', () => mapInput.click());
+  mapInput.addEventListener('change', (e) => handleMapFile(e.target.files[0]));
+  mapDropZone.addEventListener('dragover', (e) => { e.preventDefault(); mapDropZone.classList.add('active'); });
+  mapDropZone.addEventListener('dragleave', () => mapDropZone.classList.remove('active'));
+  mapDropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    mapDropZone.classList.remove('active');
+    const file = e.dataTransfer.files[0];
+    if (file) handleMapFile(file);
+  });
+  mapConvertBtn.addEventListener('click', startMapConversion);
 
   // 엑셀 변환
   excelDropZone.addEventListener('click', () => excelInput.click());
@@ -238,6 +260,73 @@ async function downloadExcel() {
     alert(`다운로드 실패: ${error.message}`);
     downloadBtn.textContent = originalText;
     downloadBtn.disabled = false;
+  }
+}
+
+// 맵자료 파일 처리
+function handleMapFile(file) {
+  if (!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['xlsx', 'xls'].includes(ext)) {
+    alert('엑셀 파일(.xlsx, .xls)만 업로드 가능합니다.');
+    return;
+  }
+
+  mapFilename.textContent = file.name;
+  const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+  mapFilesize.textContent = `${sizeInMB} MB`;
+  mapPreview.classList.remove('hidden');
+  mapConvertBtn.disabled = false;
+  mapConvertBtn._file = file;
+}
+
+// 맵자료 수정 및 변환 시작
+async function startMapConversion() {
+  const file = mapConvertBtn._file;
+  if (!file) return;
+
+  mapConvertBtn.disabled = true;
+  mapConvertText.innerHTML = '<span class="loader"></span>처리 중...';
+
+  const formData = new FormData();
+  formData.append('mapExcel', file);
+
+  try {
+    const response = await fetch('/api/convert-map', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) {
+      let errorMessage = `서버 오류 (${response.status})`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch (_) { /* 빈 응답이거나 JSON이 아닌 경우 */ }
+      throw new Error(errorMessage);
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const originalName = file.name.replace(/\.(xlsx|xls)$/i, '');
+    a.download = `${originalName}_동별시트.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+
+    mapConvertText.textContent = '변환 완료! ✅';
+    setTimeout(() => {
+      mapConvertText.textContent = '수정 및 변환';
+      mapConvertBtn.disabled = false;
+    }, 2000);
+
+  } catch (error) {
+    alert(`변환 실패: ${error.message}`);
+    mapConvertText.textContent = '수정 및 변환';
+    mapConvertBtn.disabled = false;
   }
 }
 

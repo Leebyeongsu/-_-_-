@@ -389,6 +389,97 @@ app.post('/api/convert-data-to-floor-unit', async (req, res) => {
     }
 });
 
+// 맵자료 수정 API - 1~3행 병합 셀에서 동 이름 추출 → 동별 시트 생성
+app.post('/api/convert-map', upload.single('mapExcel'), async (req, res) => {
+    if (!req.file) return res.status(400).json({ error: '엑셀 파일이 없습니다.' });
+
+    const startTime = Date.now();
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`[${new Date().toLocaleTimeString()}] 🗺️ 맵자료 변환 시작...`);
+    console.log(`📄 원본 파일명: ${req.file.originalname}`);
+
+    const inputPathRaw = req.file.path;
+    const inputPath = inputPathRaw + '.xlsx';
+    fs.renameSync(inputPathRaw, inputPath);
+
+    const outputPath = path.join('uploads', `map_converted_${Date.now()}.xlsx`);
+
+    try {
+        // ZIP 헤더 검증 (.xlsx는 ZIP 형식)
+        const fileBuffer = fs.readFileSync(inputPath);
+        const zipHeader = fileBuffer.slice(0, 4).toString('hex');
+        if (zipHeader !== '504b0304') {
+            if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
+            return res.status(400).json({ error: '유효하지 않은 엑셀 파일입니다.' });
+        }
+
+        const pythonScript = path.join(__dirname, 'map_converter.py');
+        const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
+
+        const result = await new Promise((resolve, reject) => {
+            const pythonProcess = spawn(pythonCmd, [pythonScript, inputPath, outputPath], {
+                encoding: 'utf-8',
+                env: { ...process.env, PYTHONIOENCODING: 'utf-8', PYTHONUNBUFFERED: '1' }
+            });
+
+            let stdout = '';
+            let stderr = '';
+
+            pythonProcess.stdout.on('data', (data) => {
+                stdout += data.toString('utf-8');
+                console.log('[Map Converter]', data.toString('utf-8').trim());
+            });
+
+            pythonProcess.stderr.on('data', (data) => {
+                stderr += data.toString('utf-8');
+                console.log('[Map Converter STDERR]', data.toString('utf-8').trim());
+            });
+
+            pythonProcess.on('close', (code) => {
+                if (code === 0) {
+                    try {
+                        resolve(JSON.parse(stdout));
+                    } catch (e) {
+                        reject(new Error(`JSON 파싱 오류: ${stdout}`));
+                    }
+                } else {
+                    reject(new Error(`변환 실패 (code ${code}): ${stderr}`));
+                }
+            });
+
+            pythonProcess.on('error', (err) => {
+                reject(new Error(`Python 실행 실패: ${err.message}`));
+            });
+        });
+
+        if (!result.success) {
+            if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
+            return res.status(400).json({ error: result.error });
+        }
+
+        const elapsed = Date.now() - startTime;
+        console.log(`[${elapsed}ms] ✅ 맵자료 변환 완료 - ${result.total}개 시트 생성: ${result.created_sheets.join(', ')}`);
+
+        const originalNameWithoutExt = req.file.originalname.replace(/\.(xlsx|xls)$/i, '');
+        const downloadName = `${originalNameWithoutExt}_동별시트.xlsx`;
+
+        res.download(outputPath, downloadName, (err) => {
+            if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
+            if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
+            if (err) console.error('파일 전송 오류:', err);
+            else console.log(`✅ 파일 전송 완료`);
+            console.log(`${'='.repeat(60)}\n`);
+        });
+
+    } catch (error) {
+        console.error('❌ 맵자료 변환 오류:', error.message);
+        res.status(500).json({ error: error.message });
+        if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
+        if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
+        console.log(`${'='.repeat(60)}\n`);
+    }
+});
+
 // 프로덕션: SPA 폴백 (알 수 없는 GET 요청 → index.html)
 if (fs.existsSync(path.join(__dirname, 'dist'))) {
     app.use((req, res, next) => {
