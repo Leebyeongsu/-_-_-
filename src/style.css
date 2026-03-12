@@ -40,8 +40,7 @@ body {
 }
 
 .title-container {
-  margin-bottom: 3rem;
-  position: relative;
+  margin-bottom: 1.5rem;
 }
 
 h1 {
@@ -373,18 +372,21 @@ button.secondary:hover {
   transition: width 0.3s ease;
 }
 
+/* 사용가이드 버튼 래퍼 */
+.guide-btn-wrap {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 0.75rem;
+}
+
 /* 사용가이드 버튼 */
 .guide-btn {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  padding: 0.75rem 1.8rem;
-  font-size: 1.05rem;
+  padding: 0.6rem 1.5rem;
+  font-size: 0.95rem;
   font-weight: 700;
   background: rgba(99, 102, 241, 0.18);
   border: 1.5px solid rgba(99, 102, 241, 0.5);
-  border-radius: 14px;
+  border-radius: 12px;
   color: #a5b4fc;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -397,7 +399,7 @@ button.secondary:hover {
   background: rgba(99, 102, 241, 0.35);
   border-color: #818cf8;
   color: #fff;
-  transform: translateY(calc(-50% - 2px));
+  transform: translateY(-2px);
   box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
 }
 
