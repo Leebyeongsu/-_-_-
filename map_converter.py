@@ -14,14 +14,19 @@ ALL_BORDER = Border(left=THIN_SIDE, right=THIN_SIDE, top=THIN_SIDE, bottom=THIN_
 # 텍스트 변환 규칙: 공백 제거 후 키 매칭 → (변환텍스트, 글자색hex)
 # 연한 녹색: 70AD47 / 진한 녹색: 375623 / 진한 빨간색: C00000
 UNIT_TEXT_TRANSFORM = {
-    'M(미동의)':   ('M',  '375623'),  # 녹색 글자 (통일)
-    'M':           ('M',  '375623'),  # 녹색 글자 (통일)
+    'M(미동의)':   ('KT', 'C00000'),  # 진한 빨간색 글자
+    'M':           ('M',  '375623'),  # 녹색 글자
+    'IM(미동의)':  ('KT', 'C00000'),  # 진한 빨간색 글자
     'ITM(미동의)': ('KT', 'C00000'),  # 진한 빨간색 글자
     'IT(미동의)':  ('KT', 'C00000'),
     'IM':          ('KT', 'C00000'),
     'ITM':         ('KT', 'C00000'),
     'TM':          ('KT', 'C00000'),
     'IT':          ('KT', 'C00000'),
+    'I':           ('KT', 'C00000'),
+    'TM(미동의)':  ('KT', 'C00000'),  # 진한 빨간색 글자
+    'I(미동의)':   ('KT', 'C00000'),  # 진한 빨간색 글자
+    'T(미동의)':   ('',   None),       # 빈 셀
 }
 LEFT_ALIGN = Alignment(horizontal='left', vertical='center')
 
@@ -117,8 +122,9 @@ def move_unit_subdata(new_ws, num_src_cols):
                 key = re.sub(r'\s+', '', str(src_cell.value))
                 if key in UNIT_TEXT_TRANSFORM:
                     new_text, fg_hex = UNIT_TEXT_TRANSFORM[key]
-                    dst_cell.value = new_text
-                    dst_cell.font = Font(color=fg_hex, bold=True)
+                    dst_cell.value = new_text if new_text != '' else None
+                    if fg_hex:
+                        dst_cell.font = Font(color=fg_hex, bold=True)
                 else:
                     dst_cell.value = src_cell.value
                 dst_cell.alignment = LEFT_ALIGN

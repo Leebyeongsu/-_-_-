@@ -1,5 +1,6 @@
 import './style.css'
 import XLSX from 'xlsx-js-style';
+import guideMarkdown from '../웹_사용_가이드.md?raw';
 
 const dropZone = document.getElementById('drop-zone');
 const fileInput = document.getElementById('file-input');
@@ -401,3 +402,98 @@ async function startExcelConversion() {
 }
 
 init();
+
+// 사용가이드 모달
+const guideBtn = document.getElementById('guide-btn');
+const guideModal = document.getElementById('guide-modal');
+const guideClose = document.getElementById('guide-close');
+const guideOverlay = document.getElementById('guide-overlay');
+const guideBody = document.getElementById('guide-body');
+let guideLoaded = false;
+
+guideBtn.addEventListener('click', () => {
+  guideModal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  if (!guideLoaded) {
+    guideBody.innerHTML = marked.parse(guideMarkdown);
+    guideLoaded = true;
+  }
+});
+
+function closeGuide() {
+  guideModal.classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+guideClose.addEventListener('click', closeGuide);
+guideOverlay.addEventListener('click', closeGuide);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeGuide(); });
+
+// 가이드 공통 스타일 (HTML/PDF 공용)
+const GUIDE_STYLE = `
+  body { font-family: 'Malgun Gothic', Arial, sans-serif; max-width: 860px; margin: 0 auto; padding: 32px 40px; color: #1e293b; line-height: 1.8; font-size: 14px; }
+  h1 { font-size: 22px; border-bottom: 2px solid #6366f1; padding-bottom: 8px; color: #1e1b4b; }
+  h2 { font-size: 17px; color: #4338ca; border-left: 4px solid #6366f1; padding-left: 10px; margin-top: 32px; }
+  h3 { font-size: 15px; color: #374151; margin-top: 20px; }
+  h4 { font-size: 14px; color: #6b7280; margin-top: 12px; }
+  code { background: #f0f0ff; color: #4338ca; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-family: Consolas, monospace; }
+  pre { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 18px; overflow-x: auto; }
+  pre code { background: none; padding: 0; color: #047857; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+  th { background: #eef2ff; color: #3730a3; padding: 8px 12px; border: 1px solid #c7d2fe; font-weight: 600; text-align: left; }
+  td { padding: 7px 12px; border: 1px solid #e2e8f0; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  blockquote { border-left: 4px solid #6366f1; margin: 12px 0; padding: 8px 14px; background: #f5f3ff; color: #4b5563; border-radius: 0 6px 6px 0; }
+  hr { border: none; border-top: 1px solid #e2e8f0; margin: 20px 0; }
+  a { color: #4338ca; }
+  strong { color: #111827; }
+`;
+
+// HTML 다운로드
+document.getElementById('guide-html-btn').addEventListener('click', () => {
+  const htmlContent = `<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VisionFlow 사용가이드</title>
+  <style>${GUIDE_STYLE}</style>
+</head>
+<body>${marked.parse(guideMarkdown)}</body>
+</html>`;
+  const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'VisionFlow_사용가이드.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+// PDF 다운로드
+document.getElementById('guide-pdf-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('guide-pdf-btn');
+  btn.textContent = '⏳ 생성 중...';
+  btn.disabled = true;
+
+  const el = document.createElement('div');
+  el.style.cssText = 'width:794px; padding:40px 50px; font-family:Malgun Gothic,Arial,sans-serif;';
+  el.innerHTML = `<style>${GUIDE_STYLE}</style>` + marked.parse(guideMarkdown);
+
+  try {
+    await html2pdf().set({
+      margin: 10,
+      filename: 'VisionFlow_사용가이드.pdf',
+      image: { type: 'jpeg', quality: 0.97 },
+      html2canvas: { scale: 2, useCORS: true, logging: false },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }).from(el).save();
+  } catch (e) {
+    alert('PDF 생성 실패. HTML로 다운로드 후 브라우저에서 인쇄(Ctrl+P) → PDF 저장을 이용하세요.');
+  }
+
+  btn.textContent = '⬇ PDF';
+  btn.disabled = false;
+});

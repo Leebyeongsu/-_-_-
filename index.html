@@ -9,12 +9,33 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   </head>
   <body>
     <div id="app">
       <div class="title-container">
         <h1>스피드텔레콤_VisionFlow</h1>
         <p class="subtitle">이미지를 인식하여 스마트한 엑셀 파일로 변환합니다</p>
+        <button id="guide-btn" class="guide-btn">📖 사용가이드</button>
+      </div>
+
+      <!-- 사용가이드 모달 -->
+      <div id="guide-modal" class="guide-modal hidden">
+        <div class="guide-modal-overlay" id="guide-overlay"></div>
+        <div class="guide-modal-content">
+          <div class="guide-modal-header">
+            <h2>📖 사용가이드</h2>
+            <div class="guide-header-actions">
+              <button id="guide-html-btn" class="guide-download-btn guide-dl-html">⬇ HTML</button>
+              <button id="guide-pdf-btn" class="guide-download-btn guide-dl-pdf">⬇ PDF</button>
+              <button id="guide-close" class="guide-close-btn">✕</button>
+            </div>
+          </div>
+          <div id="guide-body" class="guide-body">
+            <p style="color:#94a3b8; text-align:center; padding:2rem;">가이드를 불러오는 중...</p>
+          </div>
+        </div>
       </div>
 
       <div class="main-container">

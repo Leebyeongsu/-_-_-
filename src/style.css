@@ -41,6 +41,7 @@ body {
 
 .title-container {
   margin-bottom: 3rem;
+  position: relative;
 }
 
 h1 {
@@ -371,3 +372,215 @@ button.secondary:hover {
   width: 0%;
   transition: width 0.3s ease;
 }
+
+/* 사용가이드 버튼 */
+.guide-btn {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 0.75rem 1.8rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  background: rgba(99, 102, 241, 0.18);
+  border: 1.5px solid rgba(99, 102, 241, 0.5);
+  border-radius: 14px;
+  color: #a5b4fc;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: unset;
+  width: auto;
+  white-space: nowrap;
+  font-family: inherit;
+}
+.guide-btn:hover {
+  background: rgba(99, 102, 241, 0.35);
+  border-color: #818cf8;
+  color: #fff;
+  transform: translateY(calc(-50% - 2px));
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
+}
+
+/* 모달 헤더 우측 액션 그룹 */
+.guide-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* 모달 내 다운로드 버튼 */
+.guide-download-btn {
+  padding: 0.45rem 1.1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: rgba(16, 185, 129, 0.13);
+  border: 1.5px solid rgba(16, 185, 129, 0.4);
+  border-radius: 10px;
+  color: #6ee7b7;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: unset;
+  width: auto;
+  white-space: nowrap;
+  font-family: inherit;
+}
+.guide-download-btn:hover {
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+/* HTML 버튼 - 파란색 */
+.guide-dl-html {
+  background: rgba(99, 102, 241, 0.13);
+  border-color: rgba(99, 102, 241, 0.45);
+  color: #a5b4fc;
+}
+.guide-dl-html:hover {
+  background: rgba(99, 102, 241, 0.28);
+  border-color: #6366f1;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+/* PDF 버튼 - 초록색 */
+.guide-dl-pdf {
+  background: rgba(16, 185, 129, 0.13);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #6ee7b7;
+}
+.guide-dl-pdf:hover {
+  background: rgba(16, 185, 129, 0.28);
+  border-color: #10b981;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+/* 모달 */
+.guide-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.guide-modal.hidden { display: none !important; }
+
+.guide-modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+}
+
+.guide-modal-content {
+  position: relative;
+  z-index: 1;
+  background: #13131a;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 20px;
+  width: 90vw;
+  max-width: 860px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+}
+
+.guide-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.75rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  flex-shrink: 0;
+}
+.guide-modal-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  background: none;
+  -webkit-text-fill-color: unset;
+}
+
+.guide-close-btn {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  font-size: 0.9rem;
+  color: #94a3b8;
+  cursor: pointer;
+  flex: unset;
+  transition: all 0.2s;
+}
+.guide-close-btn:hover {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  transform: none;
+}
+
+.guide-body {
+  padding: 1.75rem 2rem;
+  overflow-y: auto;
+  flex: 1;
+  text-align: left;
+  line-height: 1.8;
+  color: #cbd5e1;
+}
+
+/* 마크다운 렌더링 스타일 */
+.guide-body h1 { font-size: 1.6rem; color: #e2e8f0; margin-top: 0; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem; background: none; -webkit-text-fill-color: unset; }
+.guide-body h2 { font-size: 1.2rem; color: #a5b4fc; margin-top: 2rem; border-left: 3px solid #6366f1; padding-left: 0.75rem; }
+.guide-body h3 { font-size: 1rem; color: #94a3b8; margin-top: 1.5rem; }
+.guide-body h4 { font-size: 0.95rem; color: #7c8da4; margin-top: 1rem; }
+.guide-body code {
+  background: rgba(99,102,241,0.15);
+  color: #a5b4fc;
+  padding: 0.15rem 0.4rem;
+  border-radius: 5px;
+  font-size: 0.88rem;
+  font-family: 'Consolas', monospace;
+}
+.guide-body pre {
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+}
+.guide-body pre code {
+  background: none;
+  padding: 0;
+  color: #6ee7b7;
+}
+.guide-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+}
+.guide-body th {
+  background: rgba(99,102,241,0.2);
+  color: #c7d2fe;
+  padding: 0.6rem 1rem;
+  border: 1px solid rgba(255,255,255,0.1);
+  font-weight: 600;
+}
+.guide-body td {
+  padding: 0.55rem 1rem;
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #cbd5e1;
+}
+.guide-body tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+.guide-body blockquote {
+  border-left: 3px solid #6366f1;
+  margin: 1rem 0;
+  padding: 0.5rem 1rem;
+  background: rgba(99,102,241,0.07);
+  color: #94a3b8;
+  border-radius: 0 8px 8px 0;
+}
+.guide-body a { color: #818cf8; }
+.guide-body hr { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 1.5rem 0; }

@@ -491,6 +491,16 @@ if (fs.existsSync(path.join(__dirname, 'dist'))) {
     });
 }
 
+// 사용가이드 MD 파일 제공 API
+app.get('/api/guide', (req, res) => {
+    const guidePath = path.join(__dirname, '사무실_사용_가이드.md');
+    if (!fs.existsSync(guidePath)) {
+        return res.status(404).json({ error: '가이드 파일을 찾을 수 없습니다.' });
+    }
+    const content = fs.readFileSync(guidePath, 'utf-8');
+    res.type('text/plain; charset=utf-8').send(content);
+});
+
 app.listen(port, '0.0.0.0', () => {
     console.log(`🚀 Server at http://localhost:${port}`);
     console.log(`📦 OCR Engine: v3 (자동 그리드 + EasyOCR)`);
