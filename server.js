@@ -187,8 +187,6 @@ app.post('/api/convert-excel', upload.single('excel'), async (req, res) => {
     // multer는 확장자 없이 저장하므로, .xlsx 확장자를 붙여서 rename
     const inputPathRaw = req.file.path;
     const inputPath = inputPathRaw + '.xlsx';
-    fs.renameSync(inputPathRaw, inputPath);
-    console.log(`📁 확장자 추가: ${inputPathRaw} → ${inputPath}`);
 
     // ASCII 안전한 출력 파일명 생성 (한글 제거)
     const safeOutputName = `converted_${Date.now()}.xlsx`;
@@ -196,6 +194,9 @@ app.post('/api/convert-excel', upload.single('excel'), async (req, res) => {
     console.log(`📤 출력 경로: ${outputPath}`);
 
     try {
+        fs.renameSync(inputPathRaw, inputPath);
+        console.log(`📁 확장자 추가: ${inputPathRaw} → ${inputPath}`);
+
         // 파일 검증: ZIP 헤더 확인 (.xlsx는 ZIP 형식)
         const fileBuffer = fs.readFileSync(inputPath);
         const zipHeader = fileBuffer.slice(0, 4).toString('hex');
@@ -400,11 +401,12 @@ app.post('/api/convert-map', upload.single('mapExcel'), async (req, res) => {
 
     const inputPathRaw = req.file.path;
     const inputPath = inputPathRaw + '.xlsx';
-    fs.renameSync(inputPathRaw, inputPath);
 
     const outputPath = path.join('uploads', `map_converted_${Date.now()}.xlsx`);
 
     try {
+        fs.renameSync(inputPathRaw, inputPath);
+
         // ZIP 헤더 검증 (.xlsx는 ZIP 형식)
         const fileBuffer = fs.readFileSync(inputPath);
         const zipHeader = fileBuffer.slice(0, 4).toString('hex');
@@ -499,6 +501,12 @@ app.get('/api/guide', (req, res) => {
     }
     const content = fs.readFileSync(guidePath, 'utf-8');
     res.type('text/plain; charset=utf-8').send(content);
+});
+
+// 전역 에러 핸들러 - 모든 미처리 에러를 JSON으로 반환
+app.use((err, req, res, next) => {
+    console.error('❌ 전역 에러:', err.message);
+    res.status(500).json({ error: err.message || 'Internal Server Error' });
 });
 
 app.listen(port, '0.0.0.0', () => {
