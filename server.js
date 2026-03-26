@@ -10,7 +10,9 @@ const app = express();
 const port = process.env.PORT || 3500;
 
 app.use(cors());
-app.use(express.json());
+
+// express.json()은 JSON body가 필요한 라우트에만 적용 (파일 업로드 라우트 간섭 방지)
+const jsonParser = express.json();
 
 // 프로덕션: Vite 빌드된 정적 파일 서빙
 if (fs.existsSync(path.join(__dirname, 'dist'))) {
@@ -101,7 +103,7 @@ app.post('/api/ocr', upload.single('image'), async (req, res) => {
 });
 
 // JSON 데이터 → 기본 엑셀 생성 API
-app.post('/api/download-basic-excel', async (req, res) => {
+app.post('/api/download-basic-excel', jsonParser, async (req, res) => {
     const startTime = Date.now();
     console.log(`[${new Date().toLocaleTimeString()}] 📥 기본 엑셀 생성 시작...`);
 
@@ -319,7 +321,7 @@ app.post('/api/convert-excel', upload.single('excel'), async (req, res) => {
 });
 
 // JSON 데이터 → 층호수 형태 엑셀 변환 API
-app.post('/api/convert-data-to-floor-unit', async (req, res) => {
+app.post('/api/convert-data-to-floor-unit', jsonParser, async (req, res) => {
     const startTime = Date.now();
     console.log(`[${new Date().toLocaleTimeString()}] 📊 층호수 형태 변환 시작...`);
 
