@@ -101,7 +101,9 @@ async function startConversion() {
   progressBar.style.width = '30%';
 
   const formData = new FormData();
-  formData.append('image', selectedFile);
+  // 한글 파일명이 Linux 서버에서 멀티파트 파싱 에러를 일으키므로 안전한 파일명으로 전송
+  const imageExt = selectedFile.name.split('.').pop() || 'jpg';
+  formData.append('image', selectedFile, `upload.${imageExt}`);
 
   try {
     const response = await fetch('/api/ocr', {
@@ -290,7 +292,8 @@ async function startMapConversion() {
   mapConvertText.innerHTML = '<span class="loader"></span>처리 중...';
 
   const formData = new FormData();
-  formData.append('mapExcel', file);
+  // 한글 파일명이 Linux 서버에서 멀티파트 파싱 에러를 일으키므로 안전한 파일명으로 전송
+  formData.append('mapExcel', file, 'upload.xlsx');
 
   try {
     const response = await fetch('/api/convert-map', {
@@ -353,7 +356,8 @@ async function startExcelConversion() {
   excelConvertText.innerHTML = '<span class="loader"></span>변환 중...';
 
   const formData = new FormData();
-  formData.append('excel', selectedExcelFile);
+  // 한글 파일명이 Linux 서버에서 멀티파트 파싱 에러를 일으키므로 안전한 파일명으로 전송
+  formData.append('excel', selectedExcelFile, 'upload.xlsx');
 
   try {
     console.log('📤 엑셀 파일 업로드 중:', selectedExcelFile.name);
