@@ -24,6 +24,19 @@ if (!fs.existsSync('uploads')) {
 }
 const upload = multer({ dest: 'uploads/' });
 
+// Multer 에러를 명시적으로 잡는 래퍼 (Express 5 에러 핸들러 우회 방지)
+function handleUpload(fieldName) {
+    return (req, res, next) => {
+        upload.single(fieldName)(req, res, (err) => {
+            if (err) {
+                console.error('❌ 업로드 에러:', err.message, err.stack);
+                return res.status(500).json({ error: `파일 업로드 실패: ${err.message}` });
+            }
+            next();
+        });
+    };
+}
+
 // Python 스크립트 실행 함수 (v3 - 자동 그리드 감지 + 텍스트)
 function runPythonOCR(imagePath) {
     return new Promise((resolve, reject) => {
@@ -74,7 +87,7 @@ function runPythonOCR(imagePath) {
     });
 }
 
-app.post('/api/ocr', upload.single('image'), async (req, res) => {
+app.post('/api/ocr', handleUpload('image'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: '이미지가 없습니다.' });
 
     const startTime = Date.now();
@@ -175,7 +188,7 @@ app.post('/api/download-basic-excel', jsonParser, async (req, res) => {
 });
 
 // 엑셀 변환 API (개선된 버전 - 파일명 인코딩 + 에러 로깅 강화)
-app.post('/api/convert-excel', upload.single('excel'), async (req, res) => {
+app.post('/api/convert-excel', handleUpload('excel'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: '엑셀 파일이 없습니다.' });
 
     const startTime = Date.now();
@@ -393,7 +406,7 @@ app.post('/api/convert-data-to-floor-unit', jsonParser, async (req, res) => {
 });
 
 // 맵자료 수정 API - 1~3행 병합 셀에서 동 이름 추출 → 동별 시트 생성
-app.post('/api/convert-map', upload.single('mapExcel'), async (req, res) => {
+app.post('/api/convert-map', handleUpload('mapExcel'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: '엑셀 파일이 없습니다.' });
 
     const startTime = Date.now();
