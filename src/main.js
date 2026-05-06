@@ -28,6 +28,15 @@ const mapFilesize = document.getElementById('map-filesize');
 const mapConvertBtn = document.getElementById('map-convert-btn');
 const mapConvertText = document.getElementById('map-convert-text');
 
+// 서부산지사 맵자료 수정 관련 요소
+const seoDropZone = document.getElementById('seo-drop-zone');
+const seoInput = document.getElementById('seo-input');
+const seoPreview = document.getElementById('seo-preview');
+const seoFilename = document.getElementById('seo-filename');
+const seoFilesize = document.getElementById('seo-filesize');
+const seoConvertBtn = document.getElementById('seo-convert-btn');
+const seoConvertText = document.getElementById('seo-convert-text');
+
 // 엑셀 변환 관련 요소
 const excelDropZone = document.getElementById('excel-drop-zone');
 const excelInput = document.getElementById('excel-input');
@@ -64,6 +73,19 @@ function init() {
     if (file) handleMapFile(file);
   });
   mapConvertBtn.addEventListener('click', startMapConversion);
+
+  // 서부산지사 맵자료 수정
+  seoDropZone.addEventListener('click', () => seoInput.click());
+  seoInput.addEventListener('change', (e) => handleSeoFile(e.target.files[0]));
+  seoDropZone.addEventListener('dragover', (e) => { e.preventDefault(); seoDropZone.classList.add('active'); });
+  seoDropZone.addEventListener('dragleave', () => seoDropZone.classList.remove('active'));
+  seoDropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    seoDropZone.classList.remove('active');
+    const file = e.dataTransfer.files[0];
+    if (file) handleSeoFile(file);
+  });
+  seoConvertBtn.addEventListener('click', startSeoConversion);
 
   // 엑셀 변환
   excelDropZone.addEventListener('click', () => excelInput.click());
@@ -331,6 +353,72 @@ async function startMapConversion() {
     alert(`변환 실패: ${error.message}`);
     mapConvertText.textContent = '수정 및 변환';
     mapConvertBtn.disabled = false;
+  }
+}
+
+// 서부산지사 파일 처리
+function handleSeoFile(file) {
+  if (!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['xlsx', 'xls'].includes(ext)) {
+    alert('엑셀 파일(.xlsx, .xls)만 업로드 가능합니다.');
+    return;
+  }
+  seoFilename.textContent = file.name;
+  const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+  seoFilesize.textContent = `${sizeInMB} MB`;
+  seoPreview.classList.remove('hidden');
+  seoConvertBtn.disabled = false;
+  seoConvertBtn._file = file;
+}
+
+// 서부산지사 수정 및 변환 시작
+async function startSeoConversion() {
+  const file = seoConvertBtn._file;
+  if (!file) return;
+
+  seoConvertBtn.disabled = true;
+  seoConvertText.innerHTML = '<span class="loader"></span>처리 중...';
+
+  const formData = new FormData();
+  formData.append('mapExcel', file, 'upload.xlsx');
+
+  try {
+    const response = await fetch('/api/convert-map-seo', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) {
+      let errorMessage = `서버 오류 (${response.status})`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch (_) { }
+      throw new Error(errorMessage);
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const originalName = file.name.replace(/\.(xlsx|xls)$/i, '');
+    a.download = `${originalName}_동별시트.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+
+    seoConvertText.textContent = '변환 완료! ✅';
+    setTimeout(() => {
+      seoConvertText.textContent = '수정 및 변환';
+      seoConvertBtn.disabled = false;
+    }, 2000);
+
+  } catch (error) {
+    alert(`변환 실패: ${error.message}`);
+    seoConvertText.textContent = '수정 및 변환';
+    seoConvertBtn.disabled = false;
   }
 }
 

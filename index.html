@@ -162,6 +162,42 @@
           </div>
         </div>
 
+        <!-- Card 6: 서부산지사 맵자료 업로드 (Row3 강제 시작) -->
+        <div class="glass-card" style="grid-column: 1;">
+          <div class="card-title">🗺️ 서부산지사 아파트 맵자료 =&gt; 수정 및 변환</div>
+          <div id="seo-drop-zone" class="upload-area">
+            <span class="upload-icon">📂</span>
+            <h3>엑셀 원본 파일 업로드</h3>
+            <p>파일을 여기로 드래그하거나 클릭하여 선택하세요</p>
+            <input type="file" id="seo-input" accept=".xlsx,.xls" class="hidden" />
+          </div>
+          <div id="seo-preview" class="excel-preview hidden">
+            <div class="file-info">
+              <span class="file-icon">📄</span>
+              <div>
+                <div id="seo-filename" class="filename"></div>
+                <div id="seo-filesize" class="filesize"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Arrow 6→7 -->
+        <div class="flow-arrow"></div>
+
+        <!-- Card 7: 서부산지사 변환 실행 -->
+        <div class="glass-card">
+          <div class="card-title">🗺️ 서부산지사 맵자료 변환 실행</div>
+          <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 1.5rem;">
+            왼쪽 카드에서 엑셀 원본 파일을 업로드한 후<br>아래 버튼을 클릭하세요.
+          </p>
+          <div class="button-group">
+            <button id="seo-convert-btn" disabled>
+              <span id="seo-convert-text">수정 및 변환</span>
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
     <script type="module" src="/src/main.js"></script>
