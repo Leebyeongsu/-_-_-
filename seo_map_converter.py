@@ -4,6 +4,8 @@ import re
 import openpyxl
 from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
+from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.pagebreak import Break
 
 THIN_SIDE = Side(style='thin')
 ALL_BORDER = Border(left=THIN_SIDE, right=THIN_SIDE, top=THIN_SIDE, bottom=THIN_SIDE)
@@ -140,6 +142,30 @@ def build_sheet(wb, building, bldg_data, apt_name):
                 status_cell.value     = f"  {text}"   # 공백 2칸으로 들여쓰기
                 status_cell.font      = font
                 status_cell.alignment = ALIGN_LEFT_INDENT
+
+    # ── 열 너비 / 행 높이 고정 ──
+    for idx in range(len(lines)):
+        ws.column_dimensions[get_column_letter(idx * 2 + 1)].width = 6.00
+        ws.column_dimensions[get_column_letter(idx * 2 + 2)].width = 6.00
+
+    total_rows = len(floors) + 2  # 타이틀(1) + 헤더(1) + 데이터
+    for row_num in range(1, total_rows + 1):
+        ws.row_dimensions[row_num].height = 23.50
+
+    # ── 인쇄 설정: 세로 방향 고정 ──
+    ws.page_setup.orientation = 'portrait'
+
+    # 인쇄 영역
+    last_col = get_column_letter(len(lines) * 2)
+    last_row = len(floors) + 2
+    ws.print_area = f"A1:{last_col}{last_row}"
+
+    # ── 열 페이지 나눔: 6라인마다 다음 페이지 시작 ──
+    LINES_PER_PAGE = 6
+    for i in range(1, len(lines) // LINES_PER_PAGE + 1):
+        break_col = i * LINES_PER_PAGE * 2
+        if break_col < len(lines) * 2:
+            ws.col_breaks.append(Break(id=break_col))
 
     return sheet_name
 
