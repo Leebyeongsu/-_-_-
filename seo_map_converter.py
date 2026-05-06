@@ -145,8 +145,8 @@ def build_sheet(wb, building, bldg_data, apt_name):
 
     # ── 열 너비 / 행 높이 고정 ──
     for idx in range(len(lines)):
-        ws.column_dimensions[get_column_letter(idx * 2 + 1)].width = 6.00
-        ws.column_dimensions[get_column_letter(idx * 2 + 2)].width = 6.00
+        ws.column_dimensions[get_column_letter(idx * 2 + 1)].width = 7.08
+        ws.column_dimensions[get_column_letter(idx * 2 + 2)].width = 7.08
 
     total_rows = len(floors) + 2  # 타이틀(1) + 헤더(1) + 데이터
     for row_num in range(1, total_rows + 1):
