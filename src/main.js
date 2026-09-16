@@ -15,6 +15,11 @@ const dataTable = document.getElementById('data-table');
 const progressContainer = document.getElementById('progress-container');
 const progressBar = document.getElementById('progress-bar');
 
+// 기존 도메인(hhofutures.store)으로 접속한 경우 새 주소 안내 표시
+if (location.hostname.endsWith('hhofutures.store')) {
+  document.getElementById('domain-notice').classList.remove('hidden');
+}
+
 let processedData = null;
 let selectedFile = null;
 let selectedExcelFile = null;
