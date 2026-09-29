@@ -1,0 +1,42 @@
+FROM node:22-bookworm-slim AS builder
+
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY index.html vite.config.js ./
+COPY src ./src
+COPY public ./public
+COPY 웹_사용_가이드.md ./
+RUN npm run build
+
+FROM node:22-bookworm-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-venv \
+    tesseract-ocr \
+    tesseract-ocr-kor \
+    tesseract-ocr-eng \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY requirements.txt ./
+RUN python3 -m venv /opt/visionflow \
+    && /opt/visionflow/bin/pip install --no-cache-dir -r requirements.txt
+
+ENV PATH="/opt/visionflow/bin:${PATH}" \
+    PYTHONIOENCODING=utf-8 \
+    PYTHONUNBUFFERED=1 \
+    NODE_ENV=production \
+    PORT=80
+
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+COPY --from=builder /app/dist ./dist
+COPY server.js ocr_engine_v3.py excel_converter.py basic_excel_generator.py json_to_floor_unit.py map_converter.py seo_map_converter.py ./
+COPY 사무실_사용_가이드.md ./
+RUN mkdir -p uploads
+
+EXPOSE 80
+CMD ["node", "server.js"]

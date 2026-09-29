@@ -1,0 +1,15 @@
+.git
+node_modules
+dist
+.env
+.env.*
+.claude
+.omc
+uploads
+__pycache__
+*.pyc
+*.xlsx
+*.log
+test_*.py
+converter.py
+CLAUDE.md
