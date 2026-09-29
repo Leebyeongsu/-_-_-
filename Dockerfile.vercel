@@ -34,7 +34,7 @@ ENV PATH="/opt/visionflow/bin:${PATH}" \
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 COPY --from=builder /app/dist ./dist
-COPY server.js ocr_engine_v3.py excel_converter.py basic_excel_generator.py json_to_floor_unit.py map_converter.py seo_map_converter.py ./
+COPY server.js request-isolation.js ocr_engine_v3.py excel_converter.py basic_excel_generator.py json_to_floor_unit.py map_converter.py seo_map_converter.py ./
 COPY 사무실_사용_가이드.md ./
 RUN mkdir -p uploads
 

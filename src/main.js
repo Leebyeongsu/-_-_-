@@ -202,11 +202,11 @@ function renderTable(data) {
 
   // 헤더 생성
   const trHead = document.createElement('tr');
-  let headerHtml = '<th>층</th>';
-  unitKeys.forEach(key => {
-    headerHtml += `<th>${key}</th>`;
+  ['층', ...unitKeys].forEach(key => {
+    const th = document.createElement('th');
+    th.textContent = key;
+    trHead.appendChild(th);
   });
-  trHead.innerHTML = headerHtml;
   dataTable.appendChild(trHead);
 
   // 데이터 행 생성

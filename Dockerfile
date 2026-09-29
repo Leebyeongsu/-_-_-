@@ -40,6 +40,7 @@ COPY --from=builder /app/dist ./dist
 
 # 소스 코드 복사
 COPY server.js ./
+COPY request-isolation.js ./
 COPY ocr_engine_v3.py ./
 COPY excel_converter.py ./
 COPY basic_excel_generator.py ./
@@ -47,7 +48,6 @@ COPY json_to_floor_unit.py ./
 COPY map_converter.py ./
 COPY seo_map_converter.py ./
 COPY *.md ./
-COPY .env* ./
 
 RUN mkdir -p uploads
 
