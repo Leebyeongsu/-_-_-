@@ -127,7 +127,7 @@ test('cross-site and ERP-host requests are rejected before any file or Python jo
 test('public access, same-origin requests and Vercel project aliases remain available', async () => {
     const h = await harness(async () => { throw new Error('UNUSED'); });
     try {
-        for (const host of ['dsone.shop', 'image-to-excel-dsone.vercel.app', 'image-to-excel-dsone-build-byeongsulee1-2203s-projects.vercel.app']) {
+        for (const host of ['image.savetelecom.shop', 'dsone.shop', 'image-to-excel-dsone.vercel.app', 'image-to-excel-dsone-build-byeongsulee1-2203s-projects.vercel.app']) {
             const response = await request(h.url + '/api/guide', { headers: { host } });
             assert.equal(response.status, 200);
             assert.match(response.headers.get('content-security-policy'), /frame-ancestors 'none'/);
