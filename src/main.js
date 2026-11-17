@@ -59,15 +59,27 @@ const COLOR_MAP = {
   'WHITE': { rgb: "FFFFFF", html: '#FFFFFF' }
 };
 
+function bindUploadArea(zone, input) {
+  zone.addEventListener('click', (event) => {
+    if (event.target !== input) input.click();
+  });
+  zone.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      input.click();
+    }
+  });
+}
+
 function init() {
   // 이미지 변환
-  dropZone.addEventListener('click', () => fileInput.click());
+  bindUploadArea(dropZone, fileInput);
   fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
   convertBtn.addEventListener('click', startConversion);
   downloadBtn.addEventListener('click', downloadExcel);
 
   // 맵자료 수정
-  mapDropZone.addEventListener('click', () => mapInput.click());
+  bindUploadArea(mapDropZone, mapInput);
   mapInput.addEventListener('change', (e) => handleMapFile(e.target.files[0]));
   mapDropZone.addEventListener('dragover', (e) => { e.preventDefault(); mapDropZone.classList.add('active'); });
   mapDropZone.addEventListener('dragleave', () => mapDropZone.classList.remove('active'));
@@ -80,7 +92,7 @@ function init() {
   mapConvertBtn.addEventListener('click', startMapConversion);
 
   // 서부산지사 맵자료 수정
-  seoDropZone.addEventListener('click', () => seoInput.click());
+  bindUploadArea(seoDropZone, seoInput);
   seoInput.addEventListener('change', (e) => handleSeoFile(e.target.files[0]));
   seoDropZone.addEventListener('dragover', (e) => { e.preventDefault(); seoDropZone.classList.add('active'); });
   seoDropZone.addEventListener('dragleave', () => seoDropZone.classList.remove('active'));
@@ -93,7 +105,7 @@ function init() {
   seoConvertBtn.addEventListener('click', startSeoConversion);
 
   // 엑셀 변환
-  excelDropZone.addEventListener('click', () => excelInput.click());
+  bindUploadArea(excelDropZone, excelInput);
   excelInput.addEventListener('change', (e) => handleExcelFile(e.target.files[0]));
   excelConvertBtn.addEventListener('click', startExcelConversion);
 }
@@ -350,13 +362,13 @@ async function startMapConversion() {
 
     mapConvertText.textContent = '변환 완료! ✅';
     setTimeout(() => {
-      mapConvertText.textContent = '수정 및 변환';
+      mapConvertText.textContent = '동부산 맵자료 변환';
       mapConvertBtn.disabled = false;
     }, 2000);
 
   } catch (error) {
     alert(`변환 실패: ${error.message}`);
-    mapConvertText.textContent = '수정 및 변환';
+    mapConvertText.textContent = '동부산 맵자료 변환';
     mapConvertBtn.disabled = false;
   }
 }
@@ -416,13 +428,13 @@ async function startSeoConversion() {
 
     seoConvertText.textContent = '변환 완료! ✅';
     setTimeout(() => {
-      seoConvertText.textContent = '수정 및 변환';
+      seoConvertText.textContent = '서부산 맵자료 변환';
       seoConvertBtn.disabled = false;
     }, 2000);
 
   } catch (error) {
     alert(`변환 실패: ${error.message}`);
-    seoConvertText.textContent = '수정 및 변환';
+    seoConvertText.textContent = '서부산 맵자료 변환';
     seoConvertBtn.disabled = false;
   }
 }
@@ -553,7 +565,7 @@ document.getElementById('guide-html-btn').addEventListener('click', () => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VisionFlow 사용가이드</title>
+  <title>이미지 엑셀 변환 프로그램 사용가이드</title>
   <style>${GUIDE_STYLE}</style>
 </head>
 <body>${marked.parse(guideMarkdown)}</body>
@@ -562,7 +574,7 @@ document.getElementById('guide-html-btn').addEventListener('click', () => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'VisionFlow_사용가이드.html';
+  a.download = '이미지_엑셀_변환_사용가이드.html';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -582,7 +594,7 @@ document.getElementById('guide-pdf-btn').addEventListener('click', async () => {
   try {
     await html2pdf().set({
       margin: 10,
-      filename: 'VisionFlow_사용가이드.pdf',
+      filename: '이미지_엑셀_변환_사용가이드.pdf',
       image: { type: 'jpeg', quality: 0.97 },
       html2canvas: { scale: 2, useCORS: true, logging: false },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -591,6 +603,6 @@ document.getElementById('guide-pdf-btn').addEventListener('click', async () => {
     alert('PDF 생성 실패. HTML로 다운로드 후 브라우저에서 인쇄(Ctrl+P) → PDF 저장을 이용하세요.');
   }
 
-  btn.textContent = '⬇ PDF';
+  btn.textContent = 'PDF 다운로드';
   btn.disabled = false;
 });
