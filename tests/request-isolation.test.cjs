@@ -54,7 +54,7 @@ async function empty(directory) {
 function post(h, route, marker, headers = {}) {
     return request(h.url + route, {
         method: 'POST',
-        headers: { host: 'dsone.shop', origin: 'https://dsone.shop', 'content-type': 'application/json', ...headers },
+        headers: { host: 'image.savetelecom.shop', origin: 'https://image.savetelecom.shop', 'content-type': 'application/json', ...headers },
         body: JSON.stringify({ data: [{ floor: marker, units: {} }] }),
     });
 }
@@ -62,7 +62,7 @@ function post(h, route, marker, headers = {}) {
 function upload(h, route, field, marker, headers = {}) {
     const form = new FormData();
     form.append(field, new Blob([field === 'image' ? marker : `PK\x03\x04${marker}`]), '../../customer.xlsx');
-    return request(h.url + route, { method: 'POST', headers: { host: 'dsone.shop', origin: 'https://dsone.shop', ...headers }, body: form });
+    return request(h.url + route, { method: 'POST', headers: { host: 'image.savetelecom.shop', origin: 'https://image.savetelecom.shop', ...headers }, body: form });
 }
 
 test('overlapping requests in the same millisecond only receive their own input, output and scratch files', async () => {
@@ -119,6 +119,8 @@ test('cross-site and ERP-host requests are rejected before any file or Python jo
         }
         assert.equal((await post(h, '/api/download-basic-excel', 'PRIVATE', { host: 'megatel.store' })).status, 421);
         assert.equal((await post(h, '/api/download-basic-excel', 'PRIVATE', { host: 'dsone-erp.vercel.app' })).status, 421);
+        assert.equal((await post(h, '/api/download-basic-excel', 'PRIVATE', { host: 'dsone.shop' })).status, 421);
+        assert.equal((await post(h, '/api/download-basic-excel', 'PRIVATE', { host: 'www.dsone.shop' })).status, 421);
         assert.equal(executions, 0);
         assert.deepEqual(await fs.readdir(h.directory), []);
     } finally { await h.close(); }
@@ -127,7 +129,7 @@ test('cross-site and ERP-host requests are rejected before any file or Python jo
 test('public access, same-origin requests and Vercel project aliases remain available', async () => {
     const h = await harness(async () => { throw new Error('UNUSED'); });
     try {
-        for (const host of ['image.savetelecom.shop', 'dsone.shop', 'image-to-excel-dsone.vercel.app', 'image-to-excel-dsone-build-byeongsulee1-2203s-projects.vercel.app']) {
+        for (const host of ['image.savetelecom.shop', 'image-to-excel-dsone.vercel.app', 'image-to-excel-dsone-build-byeongsulee1-2203s-projects.vercel.app']) {
             const response = await request(h.url + '/api/guide', { headers: { host } });
             assert.equal(response.status, 200);
             assert.match(response.headers.get('content-security-policy'), /frame-ancestors 'none'/);
@@ -146,16 +148,16 @@ test('invalid, oversized and failed requests leave no files and never return int
         assert.equal((await upload(h, '/api/ocr', 'image', 'X'.repeat(100))).status, 413);
         assert.equal((await upload(h, '/api/ocr', 'unexpected', 'X')).status, 400);
         const invalid = await request(h.url + '/api/convert-excel', {
-            method: 'POST', headers: { host: 'dsone.shop', 'content-type': 'application/json' }, body: '{}',
+            method: 'POST', headers: { host: 'image.savetelecom.shop', 'content-type': 'application/json' }, body: '{}',
         });
         assert.equal(invalid.status, 400);
         const malformed = await request(h.url + '/api/download-basic-excel', {
-            method: 'POST', headers: { host: 'dsone.shop', 'content-type': 'application/json' }, body: '{',
+            method: 'POST', headers: { host: 'image.savetelecom.shop', 'content-type': 'application/json' }, body: '{',
         });
         assert.equal(malformed.status, 400);
         await empty(h.directory);
         for (const route of ['/uploads/job-guess/result.xlsx', '/.env', '/server.js', '/request-isolation.js']) {
-            assert.equal((await request(h.url + route, { headers: { host: 'dsone.shop' } })).status, 404);
+            assert.equal((await request(h.url + route, { headers: { host: 'image.savetelecom.shop' } })).status, 404);
         }
     } finally { await h.close(); }
 });
@@ -170,7 +172,7 @@ test('disconnecting a running conversion cancels its work and cleans only its ow
     });
     try {
         const request = http.request(h.url + '/api/download-basic-excel', {
-            method: 'POST', headers: { host: 'dsone.shop', 'content-type': 'application/json' },
+            method: 'POST', headers: { host: 'image.savetelecom.shop', 'content-type': 'application/json' },
         });
         request.on('error', () => {});
         request.end(JSON.stringify({ data: [{ floor: 'ABORT' }] }));
@@ -199,7 +201,7 @@ test('aborted multipart uploads close their file streams and remove partial file
     const h = await harness(async () => { executions++; });
     try {
         const request = http.request(h.url + '/api/ocr', {
-            method: 'POST', headers: { host: 'dsone.shop', 'content-type': 'multipart/form-data; boundary=partial' },
+            method: 'POST', headers: { host: 'image.savetelecom.shop', 'content-type': 'multipart/form-data; boundary=partial' },
         });
         request.on('error', () => {});
         request.write('--partial\r\nContent-Disposition: form-data; name="image"; filename="private.png"\r\nContent-Type: image/png\r\n\r\n');
