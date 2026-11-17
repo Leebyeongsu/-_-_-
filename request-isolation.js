@@ -20,8 +20,8 @@ function assertDeploymentIsolation(env) {
 
 function isImageHost(hostname, env) {
     const host = hostname.toLowerCase();
-    if (['image.savetelecom.shop', 'image-to-excel-dsone.vercel.app'].includes(host)) return true;
-    if (/^image-to-excel-dsone-[a-z0-9-]+\.vercel\.app$/.test(host)) return true;
+    if (['image.savetelecom.shop', 'image-to-excel-savetelecom.vercel.app'].includes(host)) return true;
+    if (/^image-to-excel-savetelecom-[a-z0-9-]+\.vercel\.app$/.test(host)) return true;
     if (host === 'trustworthy-enchantment-production-40ea.up.railway.app') return true;
     return env.NODE_ENV !== 'production' && ['localhost', '127.0.0.1', '[::1]'].includes(host);
 }

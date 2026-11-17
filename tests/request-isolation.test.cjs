@@ -121,6 +121,8 @@ test('cross-site and ERP-host requests are rejected before any file or Python jo
         assert.equal((await post(h, '/api/download-basic-excel', 'PRIVATE', { host: 'dsone-erp.vercel.app' })).status, 421);
         assert.equal((await post(h, '/api/download-basic-excel', 'PRIVATE', { host: 'dsone.shop' })).status, 421);
         assert.equal((await post(h, '/api/download-basic-excel', 'PRIVATE', { host: 'www.dsone.shop' })).status, 421);
+        assert.equal((await post(h, '/api/download-basic-excel', 'PRIVATE', { host: 'image-to-excel-dsone.vercel.app' })).status, 421);
+        assert.equal((await post(h, '/api/download-basic-excel', 'PRIVATE', { host: 'image-to-excel-dsone-build-byeongsulee1-2203s-projects.vercel.app' })).status, 421);
         assert.equal(executions, 0);
         assert.deepEqual(await fs.readdir(h.directory), []);
     } finally { await h.close(); }
@@ -129,7 +131,7 @@ test('cross-site and ERP-host requests are rejected before any file or Python jo
 test('public access, same-origin requests and Vercel project aliases remain available', async () => {
     const h = await harness(async () => { throw new Error('UNUSED'); });
     try {
-        for (const host of ['image.savetelecom.shop', 'image-to-excel-dsone.vercel.app', 'image-to-excel-dsone-build-byeongsulee1-2203s-projects.vercel.app']) {
+        for (const host of ['image.savetelecom.shop', 'image-to-excel-savetelecom.vercel.app', 'image-to-excel-savetelecom-build-byeongsulee1-2203s-projects.vercel.app']) {
             const response = await request(h.url + '/api/guide', { headers: { host } });
             assert.equal(response.status, 200);
             assert.match(response.headers.get('content-security-policy'), /frame-ancestors 'none'/);
